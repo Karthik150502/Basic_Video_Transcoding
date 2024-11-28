@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String   @id @unique @default(cuid())
+  username String   @unique
+  email    String   @unique
+  password String
+  Channel  Channel?
+}
+
+model Video {
+  id                String            @id @unique @default(cuid())
+  title             String
+  description       String?
+  category          String?
+  thubmnail_url     String
+  channel_id        String
+  processing_status ProcessingStatus  @default(PROCESSING)
+  channel           Channel           @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  view_count        Int               @default(0)
+  total_pages       Int
+  created_at        DateTime          @default(now())
+  VideoResolution   VideoResolution[]
+
+  @@index([channel_id])
+}
+
+model VideoResolution {
+  id            String @id @unique @default(cuid())
+  video_id      String
+  video         Video  @relation(fields: [video_id], references: [id], onDelete: Cascade)
+  resolution    String
+  thumbnail_url String
+}
+
+model Channel {
+  id          String   @id @unique @default(cuid())
+  name        String
+  description String?
+  slug        String   @unique
+  owner_id    String   @unique
+  owner       User     @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  created_at  DateTime @default(now())
+  Video       Video[]
+
+  @@index([owner_id])
+}
+
+enum ProcessingStatus {
+  PROCESSING
+  TRANSCODED
+}
